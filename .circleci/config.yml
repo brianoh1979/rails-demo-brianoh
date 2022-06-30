@@ -20,9 +20,11 @@ jobs:
     steps:
       - checkout
       - ruby/install:
-          version: '2.5.1'
-      - run: echo "Ruby 2.5.1 has been installed"
+          version: '2.7.4'
+      - run: echo "Ruby 2.7.4 has been installed"
       - run: gem install bundler -v "$(grep -A 1 "BUNDLED WITH" Gemfile.lock | tail -n 1)"
+      - run: gem install rake
+      - run: bundle lock --add-platform x86-mingw32 x86-mswin32 x64-mingw32 java
       - ruby/install-deps
       - restore_cache:
           keys:
@@ -42,12 +44,14 @@ jobs:
           paths:
             - vendor/bundle
 
-      - run:
-          name: Database Setup
-          command: |
-            bundle exec rake db:create
-            bundle exec rake db:structure:load
-
+ #     - run:
+ #         name: Database Setup
+ #         command: |
+ #           bundle exec rake db:create
+ #           bundle exec rake db:structure:load
+      - run: rake db:create && rake db:migrate
+      - run: dockerize -wait tcp://localhost:5432 -timeout 1m
+      - run: bundle exec rails db:schema:load --trace
       - run:
           name: Parallel RSpec
           command: bin/rails test
