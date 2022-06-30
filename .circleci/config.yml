@@ -12,7 +12,7 @@ jobs:
           POSTGRES_DB: rails_blog_test
           POSTGRES_PASSWORD: ''
           POSTGRES_USER: circleci-demo-ruby
-      - image: cimg/postgres:14.0
+      - image: cimg/postgres:14.2.0-postgis
         environment:
           BUNDLE_JOBS: '3'
           BUNDLE_RETRY: '3'
