@@ -1,146 +1,62 @@
 version: 2.1
 
-setup: << pipeline.parameters.run-setup >>
-
-parameters:
-  run-setup:
-    type: boolean
-    default: true
-  run-module-a:
-    type: boolean
-    default: false
-  run-module-b:
-    type: boolean
-    default: false
+orbs:
+  ruby: circleci/ruby@1.8.0
 
 jobs:
-  module-a:
-    macos:
-      xcode: 12.5.1
+  test-cluster:
+    docker: 
+      - image: cimg/base:2021.11
+        environment:
+          RAILS_ENV: test
+          PGHOST: 127.0.0.1
+          PGUSER: root
+      - image: cimg/postgres:14.0
+        environment:
+          POSTGRES_USER: testuser
+          POSTGRES_DB: test_db
+    resource_class: brianoh1979/brian-containeragent2
+    
     steps:
       - checkout
-      - run:
-          name: Run Unit Tests
-          command: xcodebuild test -scheme circleci-demo-macos
-
-  build:
-    docker:
-      - image: 'cimg/ruby:2.7.4-node'
-    steps:
-      - checkout
-      - run: sudo apt-get update
-      - run: bundle lock --add-platform x86-mingw32 x86-mswin32 x64-mingw32 java
+      - ruby/install:
+          version: '2.7.4'
+      - run: echo "Ruby 2.7 has been installed"
+      - run: gem install bundler -v "$(grep -A 1 "BUNDLED WITH" Gemfile.lock | tail -n 1)"
       - ruby/install-deps
-      - node/install-packages:
-          pkg-manager: yarn
-          cache-key: "yarn.lock"
-   
-  test:
-    docker:
-      - image: 'cimg/ruby:2.7.4-node'
-      - environment:
-          POSTGRES_DB: rails_blog_test
-          POSTGRES_PASSWORD: ''
-          POSTGRES_USER: circleci-demo-ruby
-        image: 'circleci/postgres:9.5-alpine'
-    environment:
-      BUNDLE_JOBS: '3'
-      BUNDLE_RETRY: '3'
-      PGHOST: 127.0.0.1
-      PGPASSWORD: ''
-      PGUSER: circleci-demo-ruby
-      RAILS_ENV: test
-    parallelism: 3
-    steps:
-      - checkout
-      - run: sudo apt-get update
-      - run: gem install rake
-      - run: bundle lock --add-platform x86-mingw32 x86-mswin32 x64-mingw32 java
-      - ruby/install-deps
-      - node/install-packages:
-          pkg-manager: yarn
-          cache-key: "yarn.lock"
-      - run: rake db:create && rake db:migrate
+      - restore_cache:
+          keys:
+            - rails-demo-{{ checksum "Gemfile.lock" }}
+            - rails-demo-
+
+      # Bundle install dependencies
       - run:
-          command: 'dockerize -wait tcp://localhost:5432 -timeout 1m'
-          name: Wait for DB
+          name: Install dependencies
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
+
+      - run: sudo apt install -y postgresql-client || true
+
+      # Store bundle cache
+      - save_cache:
+          key: rails-demo-{{ checksum "Gemfile.lock" }}
+          paths:
+            - vendor/bundle
+
       - run:
-          command: 'bundle exec rails db:schema:load --trace'
-          name: Database setup
-      - ruby/rspec-test
-      - ruby/rubocop-check
+          name: Database Setup
+          command: |
+            bundle exec rake db:create
+            bundle exec rake db:structure:load
 
+      - run:
+          name: Parallel RSpec
+          command: bin/rails test
 
-  deploy:
-    docker:
-      - image: 'cimg/ruby:2.7.4-node'
-    steps:
-      - checkout
-      - run: sudo apt-get update
-      - run: bundle lock --add-platform x86-mingw32 x86-mswin32 x64-mingw32 java
-      - ruby/install-deps
-      - heroku/install
-      - heroku/deploy-via-git
-
-orbs:
-  path-filtering: circleci/path-filtering@0.1.1
-  ruby: circleci/ruby@1.1.4
-  node: circleci/node@2
-  heroku: circleci/heroku@1.2.6
-  cypress: cypress-io/cypress@1.29.0
-  docker: circleci/docker@2.0.1
-executors:
-  ruby:
-    docker:
-      - image: 'cimg/ruby:2.7.4-node'
+      # Save artifacts
+      - store_test_results:
+          path: /tmp/test-results
 
 workflows:
-  pre:
-    when: << pipeline.parameters.run-setup >>
+  deployment:
     jobs:
-      - path-filtering/filter:
-          # Compare files on main
-          base-revision: main
-          # Config for continuation; herein we reuse this config itself
-          config-path: .circleci/config.yml
-          # 3-column space-separated table for mapping; `path-to-test parameter-to-set value-for-parameter` for each row
-          mapping: |
-            .* run-setup false
-            module-a/.* run-module-a true
-            module-b/.* run-module-b true
-  module-a:
-    when: << pipeline.parameters.run-module-a >>
-    jobs:
-      - module-a
-  build_and_test:
-    when: << pipeline.parameters.run-module-b >>
-    jobs:
-      - build
-      - test:
-          requires:
-            - build
-      - cypress/install:
-          cache-key: 'cache2-{{ arch }}-{{ .Branch }}-{{ checksum "package.json" }}'
-      - cypress/run:
-          build: bundle install && sudo apt-get update && sudo apt-get install xvfb libgtk-3-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 --fix-missing
-          executor: ruby 
-          start: cd ~/project && rails server
-          wait-on: http://localhost:3000
-          cache-key: 'cache2-{{ arch }}-{{ .Branch }}-{{ checksum "package.json" }}'
-          requires:
-            - cypress/install
-          attach-workspace: yes
-      - hold:
-         type: approval
-         requires:
-           - test
-           - cypress/run
-      - deploy:
-          requires:
-            - hold
-          filters:
-             branches:
-               only:
-                 - main  
-
-         
+      - test-cluster
