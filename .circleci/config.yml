@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   ruby: circleci/ruby@1.8.0
+  node: circleci/node@2
 
 jobs:
   test-cluster:
@@ -26,6 +27,9 @@ jobs:
       - run: gem install rake
       - run: bundle lock --add-platform x86-mingw32 x86-mswin32 x64-mingw32 java
       - ruby/install-deps
+      - node/install-packages:
+          pkg-manager: yarn
+          cache-key: "yarn.lock"
       - restore_cache:
           keys:
             - rails-demo-{{ checksum "Gemfile.lock" }}
