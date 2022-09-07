@@ -106,6 +106,7 @@ workflows:
       - path-filtering/filter:
           # Compare files on main
           base-revision: main
+          circleci_domain: server4.ohalloran.eu
           # Config for continuation; herein we reuse this config itself
           config-path: .circleci/config.yml
           # 3-column space-separated table for mapping; `path-to-test parameter-to-set value-for-parameter` for each row
