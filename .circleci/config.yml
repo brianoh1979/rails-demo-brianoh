@@ -15,8 +15,8 @@ parameters:
 
 jobs:
   module-a:
-    machine: true
-    resource_class: brianoh1979/server401
+    docker:
+      - image: 'cimg/ruby:2.7.4-node'
     environment:
       IMAGE_NAME: brianoh1979/circleci-demo-docker3
     steps:
@@ -106,7 +106,7 @@ workflows:
       - path-filtering/filter:
           # Compare files on main
           base-revision: server4
-          circleci_domain: circleci.com
+          circleci_domain: server4.ohalloran.eu
           # Config for continuation; herein we reuse this config itself
           config-path: .circleci/config.yml
           # 3-column space-separated table for mapping; `path-to-test parameter-to-set value-for-parameter` for each row
