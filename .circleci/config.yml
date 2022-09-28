@@ -27,8 +27,8 @@ jobs:
       - docker/check
       - docker/build:
           image: brianoh1979/circleci-demo-docker3
-      - docker/push:
-          image: brianoh1979/circleci-demo-docker3
+#      - docker/push:
+#          image: brianoh1979/circleci-demo-docker3
 
   build:
     docker:
