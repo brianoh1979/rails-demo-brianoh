@@ -15,20 +15,18 @@ parameters:
 
 jobs:
   module-a:
-    machine: true
-    resource_class: brianoh1979/server401
+    docker:
+      - image: 'cimg/ruby:2.7.4-node'
     environment:
       IMAGE_NAME: brianoh1979/circleci-demo-docker3
     steps:
       - checkout
-      - run: echo "Hello World"
- #     - setup_remote_docker
- #     - run: docker build .
+      - setup_remote_docker
       - docker/check
       - docker/build:
           image: brianoh1979/circleci-demo-docker3
-#      - docker/push:
-#          image: brianoh1979/circleci-demo-docker3
+      - docker/push:
+          image: brianoh1979/circleci-demo-docker3
 
   build:
     docker:
