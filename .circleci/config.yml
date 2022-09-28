@@ -22,13 +22,13 @@ jobs:
     steps:
       - checkout
       - run: echo "Hello World"
-      - setup_remote_docker
-      - run: docker build .
- #     - docker/check
- #     - docker/build:
- #         image: brianoh1979/circleci-demo-docker3
- #     - docker/push:
- #         image: brianoh1979/circleci-demo-docker3
+ #     - setup_remote_docker
+ #     - run: docker build .
+      - docker/check
+      - docker/build:
+          image: brianoh1979/circleci-demo-docker3
+      - docker/push:
+          image: brianoh1979/circleci-demo-docker3
 
   build:
     docker:
