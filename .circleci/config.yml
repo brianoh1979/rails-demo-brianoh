@@ -105,9 +105,5 @@ workflows:
       - deploy:
           requires:
             - hold
-          filters:
-             branches:
-               only:
-                 - main  
 
          
