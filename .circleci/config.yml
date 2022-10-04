@@ -65,7 +65,7 @@ jobs:
       - ruby/install-deps
       - heroku/install
       - heroku/deploy-via-git
-
+          force: true
 orbs:
   path-filtering: circleci/path-filtering@0.1.1
   ruby: circleci/ruby@1.1.4
