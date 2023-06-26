@@ -16,21 +16,21 @@ jobs:
  deploy-to-eks:
    docker:
      - image: cimg/base:2021.11
-   resource_class: db-cci-ns/terraform-module
+   resource_class: awesomecicd/japac-eksrunner
    steps:
      - run:  echo "Hi I'm on a container runner!"
   
  deploy-to-ecs:
    docker:
      - image: cimg/base:2021.11
-   resource_class: db-cci-ns/terraform-module
+   resource_class: awesomecicd/japac-eksrunner
    steps:
      - run:  echo "Hi I'm on a container runner!"
 
  internal-security-scan:
    docker:
      - image: cimg/base:2021.11
-   resource_class: db-cci-ns/terraform-module
+   resource_class: awesomecicd/japac-eksrunner
    steps:
      - run:  echo "Hi I'm on a container runner!"
 
